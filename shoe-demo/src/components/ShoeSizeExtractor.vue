@@ -186,7 +186,7 @@ const uploadAllImagesSequentially = async () => {
 
     try {
       // Gọi lên ASP.NET Core Backend
-      const response = await fetch('http://apis.tdmk.vn/api/shoesize/extract', {
+      const response = await fetch('https://apis.tdmk.vn/api/shoesize/extract', {
         method: 'POST',
         body: formData,
       })
