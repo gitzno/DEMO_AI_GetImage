@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  backend:
+    image: [username]/shoesize-api:latest
+    ports: ["5144:8080"]
+    restart: always
+  frontend:
+    image: [username]/shoesize-frontend:latest
+    ports: ["9901:80"]
+    restart: always
