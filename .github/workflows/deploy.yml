@@ -42,4 +42,10 @@ jobs:
             docker pull ${{ secrets.DOCKER_USER }}/shoesize-frontend:latest
             # Chạy lại hệ thống
             cd /path/to/your/project
-            docker-compose up -d --force-recreate
+      - name: Build and push via Docker Compose
+        run: |
+          docker compose -f docker-compose.yml build
+          docker tag shoesize_api:latest ${{ secrets.DOCKER_USER }}/shoesize-api:latest
+          docker tag shoesize_frontend:latest ${{ secrets.DOCKER_USER }}/shoesize-frontend:latest
+          docker push ${{ secrets.DOCKER_USER }}/shoesize-api:latest
+          docker push ${{ secrets.DOCKER_USER }}/shoesize-frontend:latest
