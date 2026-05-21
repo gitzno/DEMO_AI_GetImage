@@ -13,12 +13,14 @@ builder.Services.AddHttpClient<IGeminiVisionService, GeminiVisionService>();
 // Thêm trước builder.Build()
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowVue", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        // Cho phép frontend từ cổng 5173 truy cập
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        // Cho phép tất cả các domain
+        policy.AllowAnyOrigin()
+              // Cho phép tất cả các phương thức (GET, POST, PUT, DELETE...)
+              .AllowAnyMethod()
+              // Cho phép tất cả các header
+              .AllowAnyHeader();
     });
 });
 
@@ -34,7 +36,7 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseCors("AllowVue");
+app.UseCors("AllowAll");
 app.MapControllers();
 
 app.Run();
