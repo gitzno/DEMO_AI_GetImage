@@ -1,10 +1,33 @@
 version: '3.8'
+
 services:
+  # Backend .NET API
   backend:
-    image: [username]/shoesize-api:latest
-    ports: ["5144:8080"]
+    image: ${DOCKER_USER}/shoesize-api:latest
+    container_name: shoesize_api
     restart: always
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      # Truyền API Key từ biến môi trường của hệ thống vào .NET
+      - Gemini__ApiKey=${GEMINI_API_KEY}
+    ports:
+      - "5144:8080"
+    networks:
+      - app-network
+
+  # Frontend Vue.js
   frontend:
-    image: [username]/shoesize-frontend:latest
-    ports: ["9901:80"]
+    image: ${DOCKER_USER}/shoesize-frontend:latest
+    container_name: shoesize_frontend
     restart: always
+    ports:
+      - "9901:80"
+    networks:
+      - app-network
+    depends_on:
+      - backend
+
+# Định nghĩa mạng nội bộ để Backend và Frontend tìm thấy nhau
+networks:
+  app-network:
+    driver: bridge
