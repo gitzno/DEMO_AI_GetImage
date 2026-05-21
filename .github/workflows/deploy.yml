@@ -44,8 +44,13 @@ jobs:
             cd /path/to/your/project
       - name: Build and push via Docker Compose
         run: |
+          # Dùng 'docker compose' (không gạch nối) để dùng plugin mới của Docker
           docker compose -f docker-compose.yml build
+          
+          # Đảm bảo các image được gắn tag đúng với username của bạn
           docker tag shoesize_api:latest ${{ secrets.DOCKER_USER }}/shoesize-api:latest
           docker tag shoesize_frontend:latest ${{ secrets.DOCKER_USER }}/shoesize-frontend:latest
+          
+          # Đẩy lên Docker Hub
           docker push ${{ secrets.DOCKER_USER }}/shoesize-api:latest
           docker push ${{ secrets.DOCKER_USER }}/shoesize-frontend:latest
