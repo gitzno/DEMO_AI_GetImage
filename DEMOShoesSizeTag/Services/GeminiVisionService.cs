@@ -34,7 +34,7 @@ namespace DEMOShoesSizeTag.Services
                 {
                     parts = new object[]
                     {
-                        new { text = "@\"Analyze this shoe tag image. Extract the shoe sizes for US, UK, FR, JP, and CHN. \r\nIMPORTANT RULES: \r\n1. If a size is represented as a fraction or merged string (e.g., '6 1/2', '61/2', or '6½'), ALWAYS convert it to a decimal format (e.g., '6.5'). \r\n2. Return the result STRICTLY as a JSON object with keys: US, UK, FR, JP, CHN.\";" },
+                        new { text = "Analyze this shoe tag image. Extract the shoe sizes for US, UK, FR, JP, CHN, and the UPC code (if available). \\r\\nIMPORTANT RULES: 1. If a size is represented as a fraction or merged string (e.g., '6 1/2', '61/2', or '6½'), ALWAYS convert it to a decimal format (e.g., '6.5'). 2. Return the result STRICTLY as a JSON object with keys: US, UK, FR, JP, CHN, and UPC. If the UPC code is not found on the tag, set the value of the UPC key to null" },
                         new { inline_data = new { mime_type = mimeType, data = base64Image } }
                     }
                 }

@@ -90,11 +90,13 @@
               <thead class="table-light border-bottom">
                 <tr>
                   <th class="ps-3 text-secondary fw-semibold small">Tên Ảnh</th>
-                  <th class="text-center text-secondary fw-semibold small">US</th>
-                  <th class="text-center text-secondary fw-semibold small">UK</th>
-                  <th class="text-center text-secondary fw-semibold small">FR</th>
-                  <th class="text-center text-secondary fw-semibold small">JP</th>
-                  <th class="text-center text-secondary fw-semibold small">CHN</th>
+                  <th
+                    v-for="col in dynamicColumns"
+                    :key="col"
+                    class="text-center text-secondary fw-semibold small"
+                  >
+                    {{ col }}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -108,11 +110,15 @@
                       >Lỗi phân tích</small
                     >
                   </td>
-                  <td class="text-center fw-bold text-primary">{{ item.data?.US ?? '-' }}</td>
-                  <td class="text-center text-dark">{{ item.data?.UK ?? '-' }}</td>
-                  <td class="text-center text-dark">{{ item.data?.FR ?? '-' }}</td>
-                  <td class="text-center text-dark">{{ item.data?.JP ?? '-' }}</td>
-                  <td class="text-center text-dark">{{ item.data?.CHN ?? '-' }}</td>
+
+                  <td
+                    v-for="col in dynamicColumns"
+                    :key="col"
+                    class="text-center"
+                    :class="col === 'US' ? 'fw-bold text-primary' : 'text-dark'"
+                  >
+                    {{ item.data?.[col] ?? '-' }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -130,12 +136,12 @@ import { ref, onUnmounted } from 'vue'
 const fileInputRef = ref(null)
 const selectedFiles = ref([])
 const results = ref([])
+const dynamicColumns = ref([]) // Chứa danh sách các cột trích xuất được
 const isProcessing = ref(false)
 const isDragging = ref(false)
 
-// Biến quản lý Cooldown (Chống spam)
 const cooldownTime = ref(0)
-const COOLDOWN_DURATION = 30 // Chờ 30 giây
+const COOLDOWN_DURATION = 30
 let cooldownTimer = null
 
 // --- Xử lý sự kiện file ---
@@ -147,12 +153,13 @@ const handleFiles = (filesArray) => {
     return
   }
   selectedFiles.value = filesArray
-  results.value = [] // Làm mới bảng kết quả
+  results.value = []
+  dynamicColumns.value = [] // Reset cột khi tải ảnh mới
 }
 
 const handleFileSelect = (event) => {
   handleFiles(Array.from(event.target.files))
-  event.target.value = '' // Reset input để có thể chọn lại file cũ
+  event.target.value = ''
 }
 
 const handleDrop = (event) => {
@@ -171,21 +178,21 @@ const startCooldown = () => {
   }, 1000)
 }
 
-onUnmounted(() => clearInterval(cooldownTimer)) // Dọn dẹp RAM khi thoát trang
+onUnmounted(() => clearInterval(cooldownTimer))
 
-// --- GỌI API TUẦN TỰ (Xong ảnh này mới gửi ảnh tiếp theo) ---
+// --- GỌI API TUẦN TỰ ---
 const uploadAllImagesSequentially = async () => {
   if (selectedFiles.value.length === 0 || cooldownTime.value > 0) return
 
   isProcessing.value = true
   results.value = []
+  dynamicColumns.value = []
 
   for (const file of selectedFiles.value) {
     const formData = new FormData()
     formData.append('image', file)
 
     try {
-      // Gọi lên ASP.NET Core Backend
       const response = await fetch('https://apis.tdmk.vn/api/shoesize/extract', {
         method: 'POST',
         body: formData,
@@ -195,7 +202,15 @@ const uploadAllImagesSequentially = async () => {
 
       const resData = await response.json()
 
-      // Đẩy thẳng vào mảng results -> Giao diện sẽ render ngay dòng này
+      // Tự động gom các cột mới vào danh sách dynamicColumns
+      if (resData.data) {
+        Object.keys(resData.data).forEach(key => {
+          if (!dynamicColumns.value.includes(key)) {
+            dynamicColumns.value.push(key)
+          }
+        })
+      }
+
       results.value.push({ fileName: file.name, data: resData.data, success: true })
     } catch (error) {
       console.error(`Lỗi khi xử lý file ${file.name}:`, error)
@@ -204,30 +219,30 @@ const uploadAllImagesSequentially = async () => {
   }
 
   isProcessing.value = false
-  startCooldown() // Kích hoạt chặn click 30s
+  startCooldown()
 }
 
-// --- Xuất CSV chuẩn UTF-8 Tiếng Việt ---
+// --- Xuất CSV Động ---
 const exportTableToCSV = () => {
   if (results.value.length === 0) return
 
-  const headers = ['Tên Ảnh', 'US', 'UK', 'FR', 'JP', 'CHN']
+  // Header CSV tự động theo các cột đã phát hiện
+  const headers = ['Tên Ảnh', ...dynamicColumns.value]
   const csvRows = [headers.join(',')]
 
   results.value.forEach((item) => {
     const d = item.data || {}
-    const row = [
-      `"${item.fileName}"`,
-      `"${d.US ?? ''}"`,
-      `"${d.UK ?? ''}"`,
-      `"${d.FR ?? ''}"`,
-      `"${d.JP ?? ''}"`,
-      `"${d.CHN ?? ''}"`,
-    ]
+    const row = [`"${item.fileName}"`]
+
+    // Gắn giá trị tương ứng từng cột, nếu không có để trống
+    dynamicColumns.value.forEach(col => {
+      row.push(`"${d[col] ?? ''}"`)
+    })
+
     csvRows.push(row.join(','))
   })
 
-  const csvString = '\uFEFF' + csvRows.join('\n') // \uFEFF là BOM giúp Excel đọc đúng tiếng Việt
+  const csvString = '\uFEFF' + csvRows.join('\n')
   const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' })
 
   const link = document.createElement('a')
@@ -319,3 +334,4 @@ const exportTableToCSV = () => {
   transform: translateY(10px);
 }
 </style>
+
